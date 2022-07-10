@@ -1,32 +1,35 @@
 import keyboard
 import threading
-import pandas as pd
 import pyperclip as pc
-from local_utils import *
+import utils.local_utils as local_utils
+import utils.global_var as global_var
 
 
 def show_clipboard_history():
+    db = local_utils.init_db(global_var.db_path)
+    print("th2 db connect")
+
     while True:
         keyboard.wait("shift+ctrl+<")
-        print("Display ClipBoard-History")
 
-        df = pd.read_csv(csv_file)
-        clipboard_history_ui = ClipboardUI()
-        clipboard_history_ui.display_ui(df)
+        print("Display ClipBoard-History")
+        local_utils.disply_history(db)
 
 
 def add_to_clipboard():
-    global sima
-    while True:
+    db = local_utils.init_db(global_var.db_path)
+    print("th1 db connect")
+
+    while True:        
         text = pc.waitForNewPaste()
-        sima = 1
+        global_var.sima_1 = 1
         print("Copy New-Paste to ClipBoard-History ")
-        add_to_csv(text, csv_file)
+        local_utils.insert_data(db, text)
+        # global_var.sima_2 = 0
 
 
 if __name__ == "__main__":
     print("start programme")
-    init_empty_csv(csv_file, cols_name)
 
     th_add = threading.Thread(target=add_to_clipboard)
     th_add.setDaemon(True)

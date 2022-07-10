@@ -1,10 +1,10 @@
 text
 " print(""start programme"")"
 ClipBoard-History
-NewPaste
 "csv_file = ""./clipboard_data.csv""
 cols_name = [""text""]
 sima = 0"
+NewPaste
 df.columns[0]
 row
 "HTML for Web Automation
