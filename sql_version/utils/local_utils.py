@@ -8,7 +8,6 @@ import utils.global_var as global_var
 
 def init_db(db_path):
     if not os.path.exists(db_path):
-        print("ffffffff")
         db = sql.connect(db_path)
         db.execute(
             """CREATE TABLE Clipboard
@@ -59,16 +58,20 @@ def disply_history(df):
     def update_tv():
         if global_var.sima_1 == 1:
             txt = pc.paste()
-            tv.insert(parent="", index=0, values=(1, txt), tags=("oddrow",))
-            x = tv.get_children()
+            item = tv.identify("item", 0, 0)
+            text = tv.item(item)["values"][1]
 
-            for i, item in enumerate(x):
-                if i != 0:
-                    idx, text = tv.item(item)["values"]
-                    if (idx + 1)% 2 == 0:
-                        tv.item(item, values=(idx + 1, text), tags=('evenrow',))
-                    else:
-                        tv.item(item, values=(idx + 1, text), tags=("oddrow"))
+            if txt != text:
+                tv.insert(parent="", index=0, values=(1, txt), tags=("oddrow",))
+                x = tv.get_children()
+
+                for i, item in enumerate(x):
+                    if i != 0:
+                        idx, text = tv.item(item)["values"]
+                        if (idx + 1)% 2 == 0:
+                            tv.item(item, values=(idx + 1, text), tags=('evenrow',))
+                        else:
+                            tv.item(item, values=(idx + 1, text), tags=("oddrow"))
             global_var.sima_1 = 0
         ws.after(1, update_tv)
 
