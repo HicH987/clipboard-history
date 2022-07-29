@@ -18,6 +18,7 @@ def create_connection(db_file):
 
 def init_db(db_path):
     if not os.path.exists(db_path):
+        print("not exist")
         db = sql.connect(db_path)
         db.execute(
             """CREATE TABLE Clipboard
@@ -25,6 +26,7 @@ def init_db(db_path):
             Text TEXT NOT NULL);"""
         )
     else:
+        print("exist and connected")
         db = sql.connect(db_path)
 
     return db
@@ -51,6 +53,13 @@ if __name__ == "__main__":
     #     "Google Sheets is a cloud-based spreadsheet application that can store data in a structured way just like most database management systems. We can connect Google Sheets with Python by enabling the API and downloading our credentials",
     # )
 
-    cur = db.execute("SELECT Text FROM Clipboard").fetchall()
-    for i in range(1, len(cur)+1):
-        print(cur[-i][0]+"\n")
+    # cur = db.execute("SELECT Text FROM Clipboard").fetchall()
+    # for i in range(1, len(cur)+1):
+    #     print(cur[-i][0]+"\n")
+
+    cur = db.cursor()
+    n = "sql"
+    sql = "select Text from Clipboard where Text like ?"
+    data = cur.execute(sql, ('%'+n+'%',)).fetchall()
+    for d in data:
+        print(d)

@@ -11,7 +11,6 @@ def show_clipboard_history():
 
     while True:
         keyboard.wait("shift+ctrl+<")
-        global_var.sima_2 = 1
         print("Display ClipBoard-History")
         local_utils.disply_history(db)
 
@@ -22,11 +21,8 @@ def add_to_clipboard():
 
     while True:
         text = pc.waitForNewPaste()
-        global_var.sima_1 = 1
-
         print("Copy New-Paste to ClipBoard-History ")
         local_utils.insert_data(db, text)
-
 
 
 if __name__ == "__main__":
