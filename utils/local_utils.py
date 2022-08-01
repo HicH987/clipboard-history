@@ -1,12 +1,33 @@
 import os
 import subprocess
+import sys
 import tkinter as tk
 import sqlite3 as sql
 from tkinter import messagebox
-
 import pyperclip as pc
 from tkinter import ttk
 import utils.global_var as global_var
+import keyboard
+import regex as re
+import fileinput
+import sys
+import pprint
+
+
+def remplace_initVal(var_name, remplace_val, file_name):
+    patt = f"(?<=(^{var_name}\s*=\s*)).*"
+    change = False
+    for line in fileinput.input(file_name, inplace=1):
+        if var_name in line:
+            rep_line, nb_car = re.subn(patt, remplace_val, line)
+            if nb_car > 0:
+                change = True
+                line = rep_line
+        sys.stdout.write(line)
+    return change
+
+
+msgb_on = False
 
 
 def init_db(db_path):
@@ -38,11 +59,23 @@ def insert_data(db, txt):
 def disply_history(df):
     search_on = False
 
-    def append_df_row(df, sql, term=None):
-        if term is None:
+    def highlight_row(event):
+        tree = event.widget
+        item = tree.identify_row(event.y)
+        try:
+            lbl.config(text=tree.item(item)["values"][2])
+            lbl.place(x=event.x, y=event.y + 50)
+            # tree.tk.call(tree, "tag", "remove", "highlight")
+            tree.tk.call(tree, "tag", "add", "highlight", item)
+            ws.after(9000, lambda: lbl.place_forget())
+        except:
+            pass
+
+    def append_df_row(df, sql, lst_term=None):
+        if lst_term is None:
             cur = df.execute(sql).fetchall()
         else:
-            cur = df.execute(sql, ("%" + term + "%",)).fetchall()
+            cur = df.execute(sql, lst_term).fetchall()
         for i in range(len(cur)):
             txt = cur[i][0]
             if len(cur[i][0]) > 30:
@@ -52,6 +85,8 @@ def disply_history(df):
                 tv.insert(parent="", index=0, values=val, tags=("evenrow",))
             else:
                 tv.insert(parent="", index=0, values=val, tags=("oddrow",))
+
+            tv.tag_bind(i, "<Motion>", highlight_row)
 
     def on_doubleClick(event):
         try:
@@ -64,6 +99,8 @@ def disply_history(df):
             pass
 
     def resetDb():
+        global msgb_on
+        msgb_on = True
         MsgBox = messagebox.askquestion(
             "Delet clipbord db", "Are You Sure ?", icon="warning"
         )
@@ -74,6 +111,7 @@ def disply_history(df):
             for record in tv.get_children():
                 tv.delete(record)
             print("delete table")
+        msgb_on = False
 
     def get_db_file():
         allPath = os.path.realpath(global_var.db_path)
@@ -87,7 +125,7 @@ def disply_history(df):
             for record in tv.get_children():
                 tv.delete(record)
             sql = f"select Text from Clipboard where Text like ?"
-            append_df_row(df, sql, term=name)
+            append_df_row(df, sql, lst_term=(f"%name%",))
             try:
                 child_id = tv.get_children()[0]
                 tv.focus(child_id)
@@ -102,15 +140,34 @@ def disply_history(df):
             search_on = False
 
     def lossfocus(event):
-        if event.widget is ws:
-            # check which widget getting the focus
-            w = ws.tk.call('focus')
-            if not w:
-                # not widget in this window
-                ws.destroy()
+        global msgb_on
+        if not msgb_on:
+            if event.widget is ws:
+                # check which widget getting the focus
+                w = ws.tk.call("focus")
+                if not w:
+                    # not widget in this window
+                    ws.destroy()
 
-# -------------MAIN-------------
-# root win
+    def exit_pgm():
+        global msgb_on
+        msgb_on = True
+        msgbox = messagebox.askquestion("Exit", "Are You Sure ?", icon="warning")
+        if msgbox == "yes":
+            try:
+                df.close()
+            except:
+                pass
+            try:
+                ws.destroy()
+            except:
+                pass
+            os._exit(0)
+        else:
+            msgb_on = False
+
+    # -------------MAIN-------------
+    # root win
     ws = tk.Tk()
     ws.title("Clipboard-History")
     ws.geometry("550x437")
@@ -118,7 +175,8 @@ def disply_history(df):
     ws.protocol("WM_DELETE_WINDOW", lambda: ws.destroy())
     ws.resizable(width=False, height=False)
     ws.focus_set()
-# treeview
+
+    # treeview
     tv = ttk.Treeview(
         ws, columns=(1, 2, 3), show="headings", height=20, selectmode="browse"
     )
@@ -133,13 +191,13 @@ def disply_history(df):
     tv.tag_configure("evenrow", background="#161515")
     tv.bind("<Double-1>", on_doubleClick)
 
-# scroll bar
+    # scroll bar
     sb = tk.Scrollbar(ws)
     sb.pack(side=tk.RIGHT, fill=tk.BOTH, pady=30)
     sb.config(command=tv.yview)
     tv.config(yscrollcommand=sb.set)
 
-# search bar
+    # search bar
     ws_ent = tk.Entry(ws, width=20, font=("Arial", 10, "bold"))
     ws_ent.place(x=5, y=6)
     ws_btn1 = tk.Button(
@@ -151,17 +209,21 @@ def disply_history(df):
     )
     ws_btn2.place(x=300, y=3)
 
-# Creating Menubar
+    # Creating Menubar
     menubar = tk.Menu(ws)
     # Adding Edit Menu and commands
     edit = tk.Menu(menubar, tearoff=0)
     menubar.add_cascade(label="Edit", menu=edit)
-    edit.add_command(label="reset database", command=resetDb)
+    edit.add_command(label="Reset Db", command=resetDb)
     # display Menu
     ws.config(menu=menubar)
-    edit.add_command(label="get to db file", command=get_db_file)
+    edit.add_command(label="Show Db File", command=get_db_file)
+    edit.add_separator()
+    edit.add_command(label="Keyboard Shortcut", command=keyShortcut)
+    edit.add_separator()
+    edit.add_command(label="Exit", command=exit_pgm)
 
-# add data to tv
+    # add data to tv
     append_df_row(df, sql="SELECT Text FROM Clipboard")
     try:
         child_id = tv.get_children()[0]
@@ -170,7 +232,11 @@ def disply_history(df):
     except:
         pass
 
-# tv style
+    lbl = tk.Label(ws, bg="#383838")
+    tv.tag_configure("highlight", background="lightblue")
+    tv.bind("<Motion>", highlight_row)
+
+    # tv style
     style = ttk.Style()
     style.configure(
         "Treeview",
@@ -182,7 +248,116 @@ def disply_history(df):
     )
     style.map("Treeview", background=[("selected", "#5E5E5E")])
 
-
-    ws.bind("<FocusOut>",lossfocus)
+    ws.bind("<FocusOut>", lossfocus)
     ws.after(1, lambda: ws.focus_force())
     ws.mainloop()
+
+
+def keyShortcut():
+    global msgb_on
+    msgb_on = True
+    in_msgBox = False
+    key = ""
+    txt = ""
+    last_key = None
+    
+    def key_pressed(event):
+        nonlocal key
+        key = keyboard.read_key()
+        lbl_key.config(text=key)
+        lbl_key.place(x=120, y=40)
+
+    def plus_key():
+        nonlocal key, last_key,txt, nb_key,in_msgBox
+        print("last_key: ",last_key)
+        print("key: ",key)
+        if key != "" and last_key != key:
+            if nb_key > 0:
+                if txt == "":
+                    txt = key
+                else:
+                    txt = txt + " + " + key
+                last_key = key
+                key = ""
+                lbl_shortKey.config(text=txt, bg="#4D4D4D")
+                lbl_shortKey.place(x=60, y=143)
+                lbl_key.place_forget()
+                nb_key -= 1
+            else:
+                in_msgBox = True
+                m = messagebox.showwarning(
+                    "showwarning", "shortcut's lenght greater than 3"
+                )
+                if m in ("ok", "yes"):
+                    pass
+                    # root.after(1, lambda: root.focus_force())
+                    # key = ""
+                    # txt = ""
+                    # lbl_shortKey.place_forget()
+                root.focus_force()
+                in_msgBox = False
+        print(txt)
+
+    def save_key():
+        nonlocal txt, nb_key,in_msgBox
+        global msgb_on
+        if 2 <= nb_key and nb_key < 4:
+            print("in save")
+            global_var.key_shortcut = txt
+            globalVar_path = os.path.realpath(global_var.file_path)
+            remplace_initVal("key_shortcut", pprint.pformat(txt), globalVar_path)
+            root.destroy()
+            msgb_on = False
+
+    def lossfocus(event):
+        global msgb_on
+        nonlocal in_msgBox
+        if not in_msgBox:
+            if event.widget is root:
+                # check which widget getting the focus
+                w = root.tk.call("focus")
+                if not w:
+                    # not widget in this window
+                    root.destroy()
+                    msgb_on = False
+
+    # ---------MAIN------------
+    root = tk.Tk()
+    root.title("Shortcut")
+    root.geometry("240x240")
+    root.attributes("-topmost", True)
+
+    nb_key = 3
+    lbl_title = tk.Label(
+        root, text="Enter Key Shortcut", font=("Calibri", 15, "bold"), justify="center"
+    )
+    lbl_title.place(x=40, y=5)
+    lbl_currentKey = tk.Label(
+        root, text="- Current Key:  ", font=("Calibri", 12, "bold"), justify="center"
+    )
+    lbl_currentKey.place(x=20, y=40)
+    lbl_currentKey = tk.Label(
+        root, text="- Shortcut:  ", font=("Calibri", 12, "bold"), justify="center"
+    )
+    lbl_currentKey.place(x=20, y=120)
+
+    lbl_key = tk.Label(root, font=("Calibri", 12, "bold"), justify="center")
+    lbl_shortKey = tk.Label(root, font=("Calibri", 12, "bold"), justify="center")
+
+    root.bind("<Key>", key_pressed)
+    btn_confirm = tk.Button(
+        root,
+        text="confirm key",
+        width=10,
+        font=("calibri", 10, "normal"),
+        command=plus_key,
+    )
+    btn_confirm.place(x=34, y=75)
+    btn_save = tk.Button(
+        root, text="Save", width=7, font=("calibri", 13, "normal"), command=save_key
+    )
+    btn_save.place(x=65, y=180)
+    root.after(1, lambda: root.focus_force())
+    root.bind("<FocusOut>", lossfocus)
+    root.mainloop()
+    msgb_on = False

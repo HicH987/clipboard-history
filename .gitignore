@@ -1,5 +1,5 @@
 /backup
 /__pycache__
 /.vscode
-csv_version/utils/__pycache__
-sql_version/utils/__pycache__
+/utils/__pycache__
+
