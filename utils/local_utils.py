@@ -13,6 +13,7 @@ import fileinput
 import sys
 import pprint
 
+msgb_on = False
 
 def remplace_initVal(var_name, remplace_val, file_name):
     patt = f"(?<=(^{var_name}\s*=\s*)).*"
@@ -27,7 +28,6 @@ def remplace_initVal(var_name, remplace_val, file_name):
     return change
 
 
-msgb_on = False
 
 
 def init_db(db_path):
@@ -259,6 +259,7 @@ def keyShortcut():
     in_msgBox = False
     key = ""
     txt = ""
+    nb_key = 3
     last_key = None
     
     def key_pressed(event):
@@ -301,13 +302,14 @@ def keyShortcut():
     def save_key():
         nonlocal txt, nb_key,in_msgBox
         global msgb_on
-        if 2 <= nb_key and nb_key < 4:
+        if nb_key <= 1:
             print("in save")
             global_var.key_shortcut = txt
             globalVar_path = os.path.realpath(global_var.file_path)
             remplace_initVal("key_shortcut", pprint.pformat(txt), globalVar_path)
             root.destroy()
             msgb_on = False
+        
 
     def lossfocus(event):
         global msgb_on
@@ -327,7 +329,7 @@ def keyShortcut():
     root.geometry("240x240")
     root.attributes("-topmost", True)
 
-    nb_key = 3
+
     lbl_title = tk.Label(
         root, text="Enter Key Shortcut", font=("Calibri", 15, "bold"), justify="center"
     )
