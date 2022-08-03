@@ -1,33 +1,19 @@
 import os
-import subprocess
-import sys
-import tkinter as tk
-import sqlite3 as sql
-from tkinter import messagebox
-import pyperclip as pc
-from tkinter import ttk
-import utils.global_var as global_var
-import keyboard
-import regex as re
-import fileinput
 import sys
 import pprint
+import keyboard
+import fileinput
+import subprocess
+import regex as re
+import tkinter as tk
+import sqlite3 as sql
+import pyperclip as pc
+from tkinter import ttk
+from tkinter import messagebox
+import utils.global_var as global_var
 
+# Global Variable
 msgb_on = False
-
-def remplace_initVal(var_name, remplace_val, file_name):
-    patt = f"(?<=(^{var_name}\s*=\s*)).*"
-    change = False
-    for line in fileinput.input(file_name, inplace=1):
-        if var_name in line:
-            rep_line, nb_car = re.subn(patt, remplace_val, line)
-            if nb_car > 0:
-                change = True
-                line = rep_line
-        sys.stdout.write(line)
-    return change
-
-
 
 
 def init_db(db_path):
@@ -98,7 +84,7 @@ def disply_history(df):
         except:
             pass
 
-    def resetDb():
+    def clear_db():
         global msgb_on
         msgb_on = True
         MsgBox = messagebox.askquestion(
@@ -167,6 +153,8 @@ def disply_history(df):
             msgb_on = False
 
     # -------------MAIN-------------
+    if not global_var.key_shortcut :
+        keyShortcut()
     # root win
     ws = tk.Tk()
     ws.title("Clipboard-History")
@@ -175,7 +163,7 @@ def disply_history(df):
     ws.protocol("WM_DELETE_WINDOW", lambda: ws.destroy())
     ws.resizable(width=False, height=False)
     ws.focus_set()
-
+    ws.iconbitmap(global_var.icon_path)
     # treeview
     tv = ttk.Treeview(
         ws, columns=(1, 2, 3), show="headings", height=20, selectmode="browse"
@@ -214,7 +202,7 @@ def disply_history(df):
     # Adding Edit Menu and commands
     edit = tk.Menu(menubar, tearoff=0)
     menubar.add_cascade(label="Edit", menu=edit)
-    edit.add_command(label="Reset Db", command=resetDb)
+    edit.add_command(label="Clear Db", command=clear_db)
     # display Menu
     ws.config(menu=menubar)
     edit.add_command(label="Show Db File", command=get_db_file)
@@ -261,7 +249,7 @@ def keyShortcut():
     txt = ""
     nb_key = 3
     last_key = None
-    
+
     def key_pressed(event):
         nonlocal key
         key = keyboard.read_key()
@@ -269,9 +257,9 @@ def keyShortcut():
         lbl_key.place(x=120, y=40)
 
     def plus_key():
-        nonlocal key, last_key,txt, nb_key,in_msgBox
-        print("last_key: ",last_key)
-        print("key: ",key)
+        nonlocal key, last_key, txt, nb_key, in_msgBox
+        print("last_key: ", last_key)
+        print("key: ", key)
         if key != "" and last_key != key:
             if nb_key > 0:
                 if txt == "":
@@ -299,8 +287,20 @@ def keyShortcut():
                 in_msgBox = False
         print(txt)
 
+    def remplace_initVal(var_name, remplace_val, file_name):
+        patt = f"(?<=(^{var_name}\s*=\s*)).*"
+        change = False
+        for line in fileinput.input(file_name, inplace=1):
+            if var_name in line:
+                rep_line, nb_car = re.subn(patt, remplace_val, line)
+                if nb_car > 0:
+                    change = True
+                    line = rep_line
+            sys.stdout.write(line)
+        return change
+
     def save_key():
-        nonlocal txt, nb_key,in_msgBox
+        nonlocal txt, nb_key, in_msgBox
         global msgb_on
         if nb_key <= 1:
             print("in save")
@@ -309,7 +309,6 @@ def keyShortcut():
             remplace_initVal("key_shortcut", pprint.pformat(txt), globalVar_path)
             root.destroy()
             msgb_on = False
-        
 
     def lossfocus(event):
         global msgb_on
@@ -328,7 +327,7 @@ def keyShortcut():
     root.title("Shortcut")
     root.geometry("240x240")
     root.attributes("-topmost", True)
-
+    root.iconbitmap(global_var.icon_path)
 
     lbl_title = tk.Label(
         root, text="Enter Key Shortcut", font=("Calibri", 15, "bold"), justify="center"
