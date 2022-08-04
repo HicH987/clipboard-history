@@ -3,9 +3,48 @@
 ## Description
 This project is clone of the standard windows clipboard. It saves each item placed on the clipboard allowing access to any of those items at a later time.
 
+The most importent used libraries:
+
+### - Python Standard Libraries
+- **sqlite3**: used to manipulate the text database 
+- **tkinter**: used to create the UI
+- **threading**: used to make two parallel processes (one that copy the current clipboard content to the database, and the other display the clipboard history UI)
+
+### - Python External Libraries
+-  **keyboard**: use to create and use the keyboard shortcut
+-  **pyperclip**: use to copy and paste to clipboard
+-  **regex**: use to get a large regex pattern
+
 <p align="center">
   <img src="./assets/images/image1.png "/>
 </p>
+
+****
+
+## Project Files
+
+```bash
+|____assets
+| |____icons 
+| | |____main_icon.ico # window icon
+| |____images 
+| | |____image1.png # readme images
+| | |____image2.png # readme images
+|
+|____data
+| |____clipboard_database.db # text database
+|
+|____utils
+| |____global_var.py # contains global variables
+| |____local_utils.py # contains utils functions
+|
+|____main.py # main script
+|____requirements.txt # required libraries
+|____readme.md
+|____license.md
+```
+
+****
 
 ## Installation
 
@@ -13,6 +52,8 @@ Run command line below to install all requirements
 ```console
 pip install -r requirements.txt
 ```  
+
+****
 
 ## Usage
 
@@ -59,7 +100,9 @@ python main.py
 - The confirmed keys will be shown below **Shorcut** label
 
 - To save the shortcut clicks on **`Save`** button
-  
+
+****
+
 ## License
 
 Distributed under the MIT License. See `license.md` for more information.
