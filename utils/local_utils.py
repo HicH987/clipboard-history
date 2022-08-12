@@ -149,7 +149,7 @@ def disply_history(df):
             for record in tv.get_children():
                 tv.delete(record)
             sql = f"select Text from Clipboard where Text like ?"
-            append_df_row(df, sql, lst_term=(f"%name%",))
+            append_df_row(df, sql, lst_term=(f"%{name}%",))
             try:
                 child_id = tv.get_children()[0]
                 tv.focus(child_id)
